@@ -1,7 +1,7 @@
 package pcl.OpenFM.network.message;
 
 import io.netty.buffer.ByteBuf;
-import cpw.mods.fml.common.network.simpleimpl.MessageContext;
+import net.minecraftforge.fml.common.network.simpleimpl.MessageContext;
 import pcl.OpenFM.TileEntity.TileEntityRadio;
 import pcl.OpenFM.misc.Speaker;
 
@@ -19,7 +19,7 @@ public class MessageRadioAddSpeaker extends BaseRadioMessage {
 
 	@Override
 	public void onMessage(TileEntityRadio radio, MessageContext ctx) {
-		radio.addSpeaker(radio.getWorldObj(), tx, ty, tz);
+		radio.addSpeaker(radio.getWorld(), tx, ty, tz);
 	}
 
 	@Override

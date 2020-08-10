@@ -1,31 +1,30 @@
+// For those who want the bleeding edge
 buildscript {
     repositories {
-        mavenCentral()
+        jcenter()
         maven {
             name = "forge"
             url = "http://files.minecraftforge.net/maven"
         }
-        maven {
-            name = "sonatype"
-            url = "https://oss.sonatype.org/content/repositories/snapshots/"
-        }
     }
     dependencies {
-        classpath 'net.minecraftforge.gradle:ForgeGradle:1.2-SNAPSHOT'
+        classpath 'net.minecraftforge.gradle:ForgeGradle:2.3-SNAPSHOT'
     }
 }
 
-apply plugin: 'forge'
-apply plugin: 'maven'
+plugins {
+  id "com.matthewprenger.cursegradle" version "1.0.7"
+}
+apply plugin: 'net.minecraftforge.gradle.forge'
 
-sourceCompatibility = 1.7
-targetCompatibility = 1.7
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
 
 repositories {
 	mavenCentral()
-    maven {
-        name = "OC repo"
-        url = "http://maven.cil.li/"
+	maven {
+        name = "OC repo mirror"
+        url = "http://maven.pc-logix.com/"
     }
 }
 
@@ -34,29 +33,51 @@ configurations {
     compile.extendsFrom shade
 }
 
+def getGitRef() {
+  try {
+    def stdout = new ByteArrayOutputStream()
+    exec {
+      commandLine 'git', 'rev-parse', '--short', 'HEAD'
+      standardOutput = stdout
+    }
+    return stdout.toString().trim()
+  } catch (Throwable e) {
+    return "unknown"
+  }
+}
 
 dependencies {
-    compile "li.cil.oc:OpenComputers:MC1.7.10-1.6.+:dev"
+    deobfCompile "li.cil.oc:OpenComputers:MC1.12.2-1.7.2.+"
 	shade "javazoom:jlayer:1.0.1"
 	shade "com.squareup.okhttp:okhttp:2.5.0"
 	shade "com.googlecode.soundlibs:tritonus-share:0.3.7-2"
+	compile "com.googlecode.soundlibs:mp3spi:1.9.5-1"
+	compile "com.googlecode.soundlibs:vorbisspi:1.0.3-1"
+	compile files('libs/jaad-0.8.5.jar')
 }
 
-if (System.getenv().BUILD_NUMBER != null)
-	ext.buildNumber = System.getenv().BUILD_NUMBER?.toInteger()
+if (System.getenv("PROMOTED_NUMBER") != null)
+    ext.buildNumber = "${System.getenv("PROMOTED_NUMBER")}"
+else if (System.getenv("BUILD_NUMBER") != null)
+    ext.buildNumber = "${System.getenv("BUILD_NUMBER")}"
 else
-	ext.buildNumber = 0
+    ext.buildNumber = "+" + getGitRef()
 
 version = "0.1.0"
 group = "pcl.OpenFM"
-archivesBaseName = "OpenFM-1.7.10"
+archivesBaseName = "OpenFM-1.12.2"
 
 minecraft {
-	version = "1.7.10-10.13.4.1448-1.7.10"
+    version = "1.12.2-14.23.4.2707"
+    runDir = "run"
+    mappings = "snapshot_20171003"
+    useDepAts = true
 	replace "@VERSION@", project.version
 	replace "@BUILD@", project.ext.buildNumber
+	makeObfSourceJar = false
 }
 
+version = "${version}.${project.ext.buildNumber}"
 jar {
     configurations.shade.each { dep ->
         from(project.zipTree(dep)){
@@ -65,25 +86,28 @@ jar {
     }
 }
 
-jar.classifier = "${ext.buildNumber}"
-jar.manifest = manifest { attributes(
-	"FMLCorePlugin": "pcl.OpenFM.misc.DepLoader",
-	"FMLCorePluginContainsFMLMod": "icanhazfmlmodpweeze"
-) }
+def commonManifest = {
+		mainAttributes( "FMLCorePlugin": "pcl.OpenFM.misc.OFMDepLoader",
+						"FMLCorePluginContainsFMLMod": true) 
+}
+jar.manifest commonManifest
+
 def curseforge_key = 0
 def curse_changlog = "default"
 if (project.hasProperty('opensecurity_curseforge_key')) {
 	curseforge_key = project.opensecurity_curseforge_key
+	//curse_changlog = project.promo-changelog
 	curse_changlog = project.changelog
 }
 
-apply plugin: 'curseforge'
-curse {
+curseforge {
 	apiKey = curseforge_key
-	projectId = "236839"
-	releaseType = "release"
-	changelog = curse_changlog
-	addGameVersion project.minecraft.version
+	project {
+		id = "236839"
+		releaseType = "release"
+		changelog = curse_changlog
+		addGameVersion '1.12.2'
+	}
 }
 
 processResources {
@@ -107,3 +131,4 @@ idea {
         outputDir = file('build/classes/main')
     }
 }
+

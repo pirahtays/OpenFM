@@ -1,7 +1,7 @@
 package pcl.OpenFM.network.message;
 
 import io.netty.buffer.ByteBuf;
-import cpw.mods.fml.common.network.simpleimpl.MessageContext;
+import net.minecraftforge.fml.common.network.simpleimpl.MessageContext;
 import pcl.OpenFM.TileEntity.TileEntityRadio;
 
 public class MessageRadioScreenColor extends BaseRadioMessage {

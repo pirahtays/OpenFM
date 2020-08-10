@@ -1,47 +1,42 @@
 package pcl.OpenFM.player;
 
-import java.io.BufferedInputStream;
-import java.io.IOException;
 import java.io.InputStream;
-
-import javax.sound.sampled.AudioInputStream;
-import javax.sound.sampled.AudioSystem;
-import javax.sound.sampled.UnsupportedAudioFileException;
 
 import com.squareup.okhttp.OkHttpClient;
 import com.squareup.okhttp.Request;
 import com.squareup.okhttp.Response;
 
-import cpw.mods.fml.client.FMLClientHandler;
+import net.minecraft.client.Minecraft;
+import net.minecraft.util.SoundCategory;
+import net.minecraft.util.text.TextComponentString;
+import net.minecraft.util.text.translation.I18n;
+import net.minecraft.world.World;
 import pcl.OpenFM.OpenFM;
-import pcl.OpenFM.TileEntity.TileEntityRadio;
 import pcl.OpenFM.network.PacketHandler;
 import pcl.OpenFM.network.message.MessageRadioPlaying;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.audio.SoundCategory;
-import net.minecraft.util.ChatComponentTranslation;
-import net.minecraft.world.World;
+import net.minecraftforge.fml.client.FMLClientHandler;
 
 public class PlayerDispatcher extends PlaybackListener implements Runnable {
 	private String streamURL;
-	private AudioPlayer player;
-	private TileEntityRadio radio;
+	public MP3Player mp3Player;
+	public OGGPlayer oggPlayer;
+	public AACPlayer aacPlayer;
+	public String decoder;
 	private Thread pThread;
 	private int x;
 	private int y;
 	private int z;
 	private World world;
-
-	public PlayerDispatcher(TileEntityRadio radio, String streamURL, World w, int x, int y, int z)
+	public PlayerDispatcher(String decoder, String mp3url, World w, int a, int b, int c)
 	{
 		try
 		{
 			this.world = w;
-			this.radio = radio;
-			this.x = x;
-			this.y = y;
-			this.z = z;
-			this.streamURL = streamURL;
+			this.decoder = decoder;
+			this.x = a;
+			this.y = b;
+			this.z = c;
+			this.streamURL = mp3url;
 			this.pThread = new Thread(this);
 			this.pThread.start();
 		}
@@ -54,61 +49,49 @@ public class PlayerDispatcher extends PlaybackListener implements Runnable {
 	@Override
 	public void run()
 	{
-		OkHttpClient client = new OkHttpClient();
-		Request request = null;
-		try {
-			request = new Request.Builder().url(streamURL)
-				//.addHeader("Icy-MetaData", "1")
-				.build();
-		} catch (IllegalArgumentException e1) {
-			streamURL = null;
-			OpenFM.logger.warn(e1);
-			return;
-		}
-		Response response = null;
-		AudioInputStream audioStream = null;
-		try {
-			response = client.newCall(request).execute();
-		} catch (IOException e1) {
-			streamURL = null;
-			OpenFM.logger.warn(e1);
-			return;
-		}
-		OpenFM.logger.info("Content-Type: " + response.header("Content-Type", "unknown"));
-		InputStream bis = null;
-		try {
-			bis = new MarkErrorInputStream(new BufferedInputStream(response.body().byteStream()));
-			audioStream = AudioSystem.getAudioInputStream(bis);
-		} catch (IOException | UnsupportedAudioFileException e1) {
-			streamURL = null;
-			OpenFM.logger.warn(e1);
-			return;
-		}
-		OpenFM.logger.info("Starting Stream: " + streamURL + " at X:" + x + " Y:" + y + " Z:" + z);
+		System.out.println(decoder);
 		try
 		{
-			this.player = new AudioPlayer(audioStream);
-			this.player.setID(this.world, this.x, this.y, this.z);
-			this.player.setPlayBackListener(this);
-			this.player.play();
+			if (decoder.equals("mp3")) {
+				OkHttpClient client = new OkHttpClient();
+				Request request = new Request.Builder().url(streamURL).build();
+				
+				Response response = client.newCall(request).execute();
+				InputStream stream = response.body().byteStream();
+				 
+				this.mp3Player = new MP3Player(stream);
+				this.mp3Player.setID(this.world, this.x, this.y, this.z);
+				this.mp3Player.setPlayBackListener(this);
+				this.mp3Player.play();
+			} else if (decoder.equals("ogg")) {
+				this.oggPlayer = new OGGPlayer();
+				this.oggPlayer.setID(this.world, this.x, this.y, this.z);
+				this.oggPlayer.play(this.streamURL);
+			} else if (decoder.equals("aac")) {
+				//this.aacPlayer = new AACPlayer();
+				//this.aacPlayer.setID(this.world, this.x, this.y, this.z);
+				//this.aacPlayer.play(this.streamURL);
+			}
 		}
 		catch (Exception e)
 		{
-			if (this.player != null) {
-				this.player.close();
-			}
 			PacketHandler.INSTANCE.sendToServer(new MessageRadioPlaying(this.x, this.y, this.z, false).wrap());
-			FMLClientHandler.instance().getClient().thePlayer.addChatMessage(new ChatComponentTranslation("msg.OpenFM.invalid_link", new Object[0]));
+			FMLClientHandler.instance().getClient().player.sendMessage(new TextComponentString(I18n.translateToLocal("msg.OpenFM.invalid_link")));
 			OpenFM.logger.error(e);
-			e.printStackTrace();
 		}
 	}
 
 	public void stop()
 	{
-		if ((this.player != null) && (isPlaying()))
+		if ((this.mp3Player != null || this.oggPlayer != null || this.aacPlayer != null) && (isPlaying()))
 		{
-			this.player.stop();
+			if (decoder.equals("mp3")) {
+				this.mp3Player.stop();
+			} else if (decoder.equals("ogg")) {
+				this.oggPlayer.stop();
+			} else if (decoder.equals("aac")) {
+				this.aacPlayer.stop();
+			}
 		}
 	}
 
@@ -120,23 +103,39 @@ public class PlayerDispatcher extends PlaybackListener implements Runnable {
 
 	public boolean isPlaying()
 	{
-		if (this.player != null)
-			return this.player.isPlaying();
-		else
+		if (decoder.equals("mp3")) {
 			return this.pThread.isAlive();
+		} else if (decoder.equals("ogg")) {
+			return this.oggPlayer.isPlaying();
+		} else if (decoder.equals("aac")) {
+			return this.aacPlayer.isPlaying();
+		} else {
+			return false;
+		}
+
 	}
 
 	public void setVolume(float f)
 	{
-		if (this.player != null)
-			this.player.setVolume(f);
+		if (this.mp3Player != null) {
+			this.mp3Player.setVolume(f);
+		} else if (this.oggPlayer != null) {
+			this.oggPlayer.setVolume(f);
+		} else if (this.aacPlayer != null) {
+			this.aacPlayer.setVolume(f);
+		}
 	}
 
 	public float getVolume()
 	{
-		if (this.player != null)
-			return this.player.getVolume() / Minecraft.getMinecraft().gameSettings.getSoundLevel(SoundCategory.RECORDS);
-		else
+		if (decoder.equals("mp3")) {
+			return this.mp3Player.getVolume() / Minecraft.getMinecraft().gameSettings.getSoundLevel(SoundCategory.RECORDS);
+		} else if (decoder.equals("ogg")) {
+			return this.oggPlayer.getVolume() / Minecraft.getMinecraft().gameSettings.getSoundLevel(SoundCategory.RECORDS);
+		} else if (decoder.equals("aac")) {
+			return this.aacPlayer.getVolume() / Minecraft.getMinecraft().gameSettings.getSoundLevel(SoundCategory.RECORDS);
+		}else {
 			return 0;
+		}
 	}
 }

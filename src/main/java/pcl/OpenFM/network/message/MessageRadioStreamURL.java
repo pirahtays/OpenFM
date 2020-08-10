@@ -1,8 +1,8 @@
 package pcl.OpenFM.network.message;
 
 import io.netty.buffer.ByteBuf;
-import cpw.mods.fml.common.network.ByteBufUtils;
-import cpw.mods.fml.common.network.simpleimpl.MessageContext;
+import net.minecraftforge.fml.common.network.ByteBufUtils;
+import net.minecraftforge.fml.common.network.simpleimpl.MessageContext;
 import pcl.OpenFM.TileEntity.TileEntityRadio;
 
 public class MessageRadioStreamURL extends BaseRadioMessage {
@@ -21,10 +21,13 @@ public class MessageRadioStreamURL extends BaseRadioMessage {
 			if (radio.isPlaying()) {
 				radio.stopStream();
 				radio.streamURL = streamURL;
-				try {
-					radio.startStream();
-				} catch (Exception e) {
-					radio.stopStream();
+				if (radio.isValid) {
+					try {
+						radio.startStream();
+					} catch (Exception e) {
+						e.printStackTrace();
+						radio.stopStream();
+					}
 				}
 			} else {
 				radio.streamURL = streamURL;

@@ -1,7 +1,8 @@
 package pcl.OpenFM.network.message;
 
 import io.netty.buffer.ByteBuf;
-import cpw.mods.fml.common.network.simpleimpl.MessageContext;
+import net.minecraft.util.math.BlockPos;
+import net.minecraftforge.fml.common.network.simpleimpl.MessageContext;
 import pcl.OpenFM.TileEntity.TileEntityRadio;
 import pcl.OpenFM.network.MessageRadioBase;
 
@@ -11,9 +12,10 @@ public abstract class BaseRadioMessage {
 	public BaseRadioMessage() {}
 
 	public BaseRadioMessage(TileEntityRadio radio) {
-		x = radio.xCoord;
-		y = radio.yCoord;
-		z = radio.zCoord;
+		BlockPos pos = radio.getPos();
+		x = pos.getX();
+		y = pos.getY();
+		z = pos.getZ();
 	}
 
 	public abstract void onMessage(TileEntityRadio radio, MessageContext ctx);

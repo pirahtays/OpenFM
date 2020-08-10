@@ -1,222 +1,163 @@
 package pcl.OpenFM.Block;
 
-import java.util.ArrayList;
 import java.util.Random;
 
+import dan200.computercraft.api.peripheral.IPeripheral;
+import dan200.computercraft.api.peripheral.IPeripheralProvider;
 import net.minecraft.block.Block;
 import net.minecraft.block.ITileEntityProvider;
 import net.minecraft.block.material.Material;
-import net.minecraft.client.renderer.texture.IIconRegister;
+import net.minecraft.block.properties.IProperty;
+import net.minecraft.block.properties.PropertyDirection;
+import net.minecraft.block.state.BlockStateContainer;
+import net.minecraft.block.state.IBlockState;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.item.EntityItem;
 import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.init.Blocks;
 import net.minecraft.inventory.IInventory;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.server.MinecraftServer;
 import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.IIcon;
-import net.minecraft.util.MathHelper;
+import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.EnumFacing;
+import net.minecraft.util.EnumHand;
 import net.minecraft.world.IBlockAccess;
 import net.minecraft.world.World;
+import net.minecraftforge.fml.common.FMLCommonHandler;
+import net.minecraftforge.fml.common.Optional;
+import net.minecraftforge.fml.relauncher.Side;
+import net.minecraftforge.items.CapabilityItemHandler;
+import net.minecraftforge.items.IItemHandler;
 import pcl.OpenFM.OpenFM;
-import pcl.OpenFM.GUI.GuiRadioBase;
 import pcl.OpenFM.TileEntity.TileEntityRadio;
-import cpw.mods.fml.client.FMLClientHandler;
-import cpw.mods.fml.common.FMLCommonHandler;
-import cpw.mods.fml.relauncher.Side;
-import cpw.mods.fml.relauncher.SideOnly;
-import cpw.mods.fml.common.Optional;
-import dan200.computercraft.api.peripheral.IPeripheral;
-import dan200.computercraft.api.peripheral.IPeripheralProvider;
 
 @Optional.InterfaceList({
-	@Optional.Interface(iface = "dan200.computercraft.api.peripheral.IPeripheralProvider", modid = "ComputerCraft"),
+	@Optional.Interface(iface = "dan200.computercraft.api.peripheral.IPeripheralProvider", modid = "computercraft"),
 })
-public class BlockRadio extends Block implements ITileEntityProvider, IPeripheralProvider {
+public class BlockRadio extends Block implements IPeripheralProvider {
 
-	@SideOnly(Side.CLIENT)
-	public static IIcon sideIcon;
-	@SideOnly(Side.CLIENT)
-	public static IIcon frontIcon;
-	public GuiRadioBase guiRadio;
+	//public GuiRadioBase guiRadio;
 	private Random random;
-	
+
 	public BlockRadio()
 	{
-		super(Material.wood);
+		super(Material.WOOD);
 		setHardness(2.0F);
 		setResistance(10.0F);
-		setBlockName("OpenFM.Radio");
-		setStepSound(Block.soundTypeWood);
+		setUnlocalizedName("radio");
+		//setStepSound(Block.soundTypeWood);
 		random = new Random();
 	}
-
-
-	@SideOnly(Side.CLIENT)
-	public void registerBlockIcons(IIconRegister ir)
-	{
-		sideIcon = ir.registerIcon("openfm:radio_side");
-		frontIcon = ir.registerIcon("openfm:radio_front");
-	}
-
-	@SideOnly(Side.CLIENT)
-	public IIcon getIcon(int side, int meta)
-	{
-		switch (side)
-		{
-		case 2: 
-			if (meta == 1) {
-				return frontIcon;
-			}
-			return sideIcon;
-		case 3: 
-			if (meta == 0 || meta == 3)
-				return frontIcon;
-
-			return sideIcon;
-		case 4: 
-			if (meta == 4){
-				return frontIcon;
-			}
-			return sideIcon;
-		case 5: 
-			if (meta == 2){
-				return frontIcon;
-			}
-			return sideIcon;
+	
+	@Override
+	public boolean onBlockActivated(World world, BlockPos pos, IBlockState state, EntityPlayer player, EnumHand hand, EnumFacing side, float hitX, float hitY, float hitZ) {
+		TileEntity tileEntity = world.getTileEntity(pos);
+		if (tileEntity == null || player.isSneaking()) {
+			return false;
 		}
-		return sideIcon;
+		player.openGui(OpenFM.instance, 0, world, pos.getX(), pos.getY(), pos.getZ());
+		return true;
 	}
 
 	@Override
-	public boolean onBlockActivated(World world, int x, int y, int z, EntityPlayer player, int metadata, float clickX, float clickY, float clickZ) {
-			TileEntity tileEntity = world.getTileEntity(x, y, z);
-			if (tileEntity == null || player.isSneaking()) {
-				return false;
-			}
-			player.openGui(OpenFM.instance, 0, world, x, y, z);
-			return true;
-	}
-
-	@Override
-	public void breakBlock(World world, int x, int y, int z, Block block, int p_149749_6_) {
-		TileEntityRadio t = (TileEntityRadio)world.getTileEntity(x, y, z);
-		if(t==null)
-			return;
+	public void breakBlock(World world, BlockPos pos, IBlockState state) {
 		
-		dropContent(t, world, t.xCoord, t.yCoord, t.zCoord);
-		ArrayList<ItemStack> items = new ArrayList<ItemStack>();
-		if (t instanceof TileEntityRadio) {
-			if (t.stations.size() > 0) {
-				ItemStack stack = new ItemStack(block, 1);
-
-				if (!stack.hasTagCompound()) {
-					stack.setTagCompound(new NBTTagCompound());
-				}
-				if(t.streamURL != null)
-					stack.getTagCompound().setString("streamurl", t.streamURL);
-				if(t.getScreenText() != null)
-					stack.getTagCompound().setString("screenText", t.getScreenText());
-				stack.getTagCompound().setInteger("screenColor", t.getScreenColor());
-				for(int i = 0; i < t.getStationCount(); i++)
-				{
-					if (t.stations.get(i) != null) {
-						stack.getTagCompound().setString("station" + i, t.stations.get(i));
-						stack.getTagCompound().setInteger("stationCount", i + 1);
-					}
-				}
-				items.add(stack);
-				world.spawnEntityInWorld(new EntityItem(world, x, y, z, items.get(0)));
-				world.setBlock(x, y, z, Blocks.air);
-			}
+		if(world.isRemote) {
+			return;
+		}
+		
+		TileEntityRadio t = (TileEntityRadio)world.getTileEntity(pos);
+		if(t==null) {
+			return;
+		}
+		
+		IItemHandler itemHandler = t.getCapability(CapabilityItemHandler.ITEM_HANDLER_CAPABILITY, null);
+		ItemStack stack1 = itemHandler.getStackInSlot(0);
+		if (!stack1.isEmpty()) {
+			EntityItem item = new EntityItem(world, pos.getX(), pos.getY(), pos.getZ(), stack1);
+			world.spawnEntity(item);
 		}
 	}
 
+	public static final PropertyDirection PROPERTYFACING = PropertyDirection.create("facing", EnumFacing.Plane.HORIZONTAL);
+
 	@Override
-	public Item getItemDropped(int meta, Random random, int fortune) {
-		return null;
+	public IBlockState getStateFromMeta(int meta)
+	{
+		EnumFacing facing = EnumFacing.getHorizontal(meta);
+		return this.getDefaultState().withProperty(PROPERTYFACING, facing);
 	}
 
 	@Override
-	public void onBlockPlacedBy(World par1World, int par2, int par3, int par4, EntityLivingBase par5EntityLiving, ItemStack par6ItemStack) {
-		int l = MathHelper.floor_double(par5EntityLiving.rotationYaw * 4.0F / 360.0F + 0.5D) & 0x3;
-		par1World.setBlockMetadataWithNotify(par2, par3, par4, l + 1, 2);
-		TileEntity te = par1World.getTileEntity(par2, par3, par4);
-		((TileEntityRadio) te).owner = par5EntityLiving.getUniqueID().toString();
+	public int getMetaFromState(IBlockState state)
+	{
+		EnumFacing facing = (EnumFacing)state.getValue(PROPERTYFACING);
+		int facingbits = facing.getHorizontalIndex();
+		return facingbits;
 	}
+
+	@Override
+	public IBlockState getStateForPlacement(World world, BlockPos pos, EnumFacing facing, float hitX, float hitY, float hitZ, int meta, EntityLivingBase placer, EnumHand hand) {
+		return super.getStateForPlacement(world, pos, facing, hitX, hitY, hitZ, meta, placer, hand).withProperty(PROPERTYFACING, placer.getHorizontalFacing());
+	}
+
+	@Override
+	public IBlockState getActualState(IBlockState state, IBlockAccess worldIn, BlockPos pos)
+	{
+		return state;
+	}
+
+	@Override
+	protected BlockStateContainer createBlockState()
+	{
+		return new BlockStateContainer(this, new IProperty[] {PROPERTYFACING});
+	}
+	
+    @Override
+    public void onBlockPlacedBy(World worldIn, BlockPos pos, IBlockState state, EntityLivingBase placer, ItemStack stack) {
+    	super.onBlockPlacedBy(worldIn, pos, state, placer, stack);
+    	TileEntity te = worldIn.getTileEntity(pos);
+		((TileEntityRadio) te).setOwner(placer.getUniqueID().toString());
+    }
 
 	public boolean canConnectRedstone(IBlockAccess world, int x, int y, int z, int side) {
 		return true;
 	}
 
-	public void onNeighborBlockChange(World world, int x, int y, int z, Block block) {
-		boolean flag = world.isBlockIndirectlyGettingPowered(x, y, z);
+	@Override
+	public void neighborChanged(IBlockState state, World world, BlockPos pos, Block block, BlockPos fromPos) {
+		boolean flag = world.isBlockPowered(pos);
 		try {
 			Side side = FMLCommonHandler.instance().getEffectiveSide();
-			if (block.canProvidePower()) {
-				TileEntity tileEntity;
-				if (side == Side.SERVER) {
-					tileEntity = MinecraftServer.getServer().getEntityWorld().getTileEntity(x, y, z);
-				} else {
-					tileEntity = FMLClientHandler.instance().getClient().theWorld.getTileEntity(x, y, z);
-				}
+			if (block.canProvidePower((IBlockState) block.getBlockState().getBaseState())) {
+				TileEntity tileEntity = world.getTileEntity(pos);
 				((TileEntityRadio)tileEntity).setRedstoneInput(flag);
 			}
 		}
-		catch (Exception localException) { }
-	}
-
-	public void dropContent(IInventory chest, World world, int xCoord, int yCoord, int zCoord) {
-		if (chest == null)
-			return;
-
-		for (int i1 = 0; i1 < chest.getSizeInventory(); ++i1) {
-			ItemStack itemstack = chest.getStackInSlot(i1);
-
-			if (itemstack != null) {
-				float offsetX = random.nextFloat() * 0.8F + 0.1F;
-				float offsetY = random.nextFloat() * 0.8F + 0.1F;
-				float offsetZ = random.nextFloat() * 0.8F + 0.1F;
-				EntityItem entityitem;
-
-				for (; itemstack.stackSize > 0; world.spawnEntityInWorld(entityitem)) {
-					int stackSize = random.nextInt(21) + 10;
-					if (stackSize > itemstack.stackSize)
-						stackSize = itemstack.stackSize;
-
-					itemstack.stackSize -= stackSize;
-					entityitem = new EntityItem(world, (double)((float)xCoord + offsetX), (double)((float)yCoord + offsetY), (double)((float)zCoord + offsetZ), new ItemStack(itemstack.getItem(), stackSize, itemstack.getItemDamage()));
-
-					float velocity = 0.05F;
-					entityitem.motionX = (double)((float)random.nextGaussian() * velocity);
-					entityitem.motionY = (double)((float)random.nextGaussian() * velocity + 0.2F);
-					entityitem.motionZ = (double)((float)random.nextGaussian() * velocity);
-
-					if (itemstack.hasTagCompound())
-						entityitem.getEntityItem().setTagCompound((NBTTagCompound)itemstack.getTagCompound().copy());
-				}
-			}
-		}
+		catch (Exception localException) { localException.printStackTrace(); }
 	}
 	
 	public boolean shouldCheckWeakPower(IBlockAccess world, int x, int y, int z, int side) {
 		return true;
 	}
 
-	public TileEntity createNewTileEntity(World world, int meta) {
+	@Override
+    public boolean hasTileEntity(IBlockState state)
+    {
+        return true;
+    }
+	
+	@Override
+	public TileEntity createTileEntity(World world, IBlockState state) {
 		return new TileEntityRadio(world);
 	}
-
-
+	
 	// IPeripheralProvider
-	@Optional.Method(modid = "ComputerCraft")
+	@Optional.Method(modid = "computercraft")
 	@Override
-	public IPeripheral getPeripheral(World world, int x, int y, int z, int side) {
-		TileEntity te = world.getTileEntity(x, y, z);
-
+	public IPeripheral getPeripheral(World world, BlockPos pos, EnumFacing side) {
+		TileEntity te = world.getTileEntity(pos);
 		if(te instanceof TileEntityRadio)
 			return (IPeripheral)te;
 

@@ -14,10 +14,10 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 
 import pcl.OpenFM.BuildInfo;
-import cpw.mods.fml.relauncher.IFMLCallHook;
-import cpw.mods.fml.relauncher.IFMLLoadingPlugin;
+import net.minecraftforge.fml.relauncher.IFMLCallHook;
+import net.minecraftforge.fml.relauncher.IFMLLoadingPlugin;
 
-public class DepLoader implements IFMLLoadingPlugin, IFMLCallHook {
+public class OFMDepLoader implements IFMLLoadingPlugin, IFMLCallHook {
 	public void load() throws IOException, URISyntaxException {
 		System.out.println("Starting OpenFM DepLoader!");
 		File f = new File("mods"+File.separator);

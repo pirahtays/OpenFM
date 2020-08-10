@@ -4,11 +4,13 @@ import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.tileentity.TileEntity;
+import net.minecraft.util.math.BlockPos;
 import net.minecraftforge.event.world.BlockEvent.BreakEvent;
 import pcl.OpenFM.OpenFM;
 import pcl.OpenFM.TileEntity.TileEntityRadio;
-import cpw.mods.fml.common.eventhandler.EventPriority;
-import cpw.mods.fml.common.eventhandler.SubscribeEvent;
+import net.minecraftforge.fml.common.FMLCommonHandler;
+import net.minecraftforge.fml.common.eventhandler.EventPriority;
+import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 
 public class OFMBreakEvent {
 
@@ -17,14 +19,14 @@ public class OFMBreakEvent {
 	}
 
 	public static boolean IsOp(EntityPlayer player) {
-		return MinecraftServer.getServer().getConfigurationManager().func_152596_g(player.getGameProfile());
+		return FMLCommonHandler.instance().getMinecraftServerInstance().getPlayerList().canSendCommands(player.getGameProfile());
 	}
 
 	@SubscribeEvent(priority=EventPriority.NORMAL)
 	public void onBlockBreak(BreakEvent event) {
 		if (event.getPlayer() instanceof EntityPlayerMP) {
 			if (!IsOp(event.getPlayer())) {
-				TileEntity TE = event.world.getTileEntity(event.x, event.y, event.z);
+				TileEntity TE = event.getWorld().getTileEntity(new BlockPos(event.getPos().getX(), event.getPos().getY(), event.getPos().getZ()));
 				if(TE instanceof TileEntityRadio){
 					TileEntityRadio xEntity = (TileEntityRadio) TE;
 					if(xEntity.owner!=null){
@@ -36,9 +38,9 @@ public class OFMBreakEvent {
 					}
 				}
 			} else {
-				TileEntity TE = event.world.getTileEntity(event.x, event.y, event.z);
+				TileEntity TE = event.getWorld().getTileEntity(new BlockPos(event.getPos().getX(), event.getPos().getY(), event.getPos().getZ()));
 				if(TE instanceof TileEntityRadio){
-					OpenFM.logger.info("Op is breaking a radio at X:" + event.x + " Y: " + event.y + " Z: " + event.z);
+					OpenFM.logger.info("Op is breaking a radio at X:" + event.getPos().getX() + " Y: " + event.getPos().getY() + " Z: " + event.getPos().getZ());
 				}
 			}
 		}

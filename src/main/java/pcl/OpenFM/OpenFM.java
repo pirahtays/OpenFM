@@ -5,34 +5,35 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
+import net.minecraftforge.client.event.ModelRegistryEvent;
+import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.common.config.Configuration;
+import net.minecraftforge.fml.client.event.ConfigChangedEvent;
+import net.minecraftforge.fml.common.FMLCommonHandler;
+import net.minecraftforge.fml.common.Loader;
+import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.fml.common.ModContainer;
+import net.minecraftforge.fml.common.SidedProxy;
+import net.minecraftforge.fml.common.event.FMLInitializationEvent;
+import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
+import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
+import net.minecraftforge.fml.common.network.NetworkRegistry;
+import net.minecraftforge.fml.relauncher.Side;
+import net.minecraftforge.fml.relauncher.SideOnly;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import net.minecraft.client.gui.GuiIngameMenu;
-import net.minecraftforge.client.event.GuiOpenEvent;
-import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.common.config.Configuration;
+import dan200.computercraft.api.ComputerCraftAPI;
+import dan200.computercraft.api.peripheral.IPeripheralProvider;
+import pcl.OpenFM.Block.BlockRadio;
 import pcl.OpenFM.GUI.OFMGuiHandler;
 import pcl.OpenFM.Handler.ClientEvent;
 import pcl.OpenFM.Handler.ServerEvent;
 import pcl.OpenFM.network.PacketHandler;
 import pcl.OpenFM.player.PlayerDispatcher;
-import cpw.mods.fml.client.GuiIngameModOptions;
-import cpw.mods.fml.client.GuiModList;
-import cpw.mods.fml.client.event.ConfigChangedEvent;
-import cpw.mods.fml.common.FMLCommonHandler;
-import cpw.mods.fml.common.Mod;
-import cpw.mods.fml.common.ModContainer;
-import cpw.mods.fml.common.SidedProxy;
-import cpw.mods.fml.common.event.FMLInitializationEvent;
-import cpw.mods.fml.common.event.FMLPreInitializationEvent;
-import cpw.mods.fml.common.eventhandler.EventPriority;
-import cpw.mods.fml.common.eventhandler.SubscribeEvent;
-import cpw.mods.fml.common.network.NetworkRegistry;
-import cpw.mods.fml.relauncher.Side;
-import cpw.mods.fml.relauncher.SideOnly;
 
-@Mod(modid=BuildInfo.modID, name=BuildInfo.modName, version=BuildInfo.versionNumber + "." + BuildInfo.buildNumber, dependencies = "", guiFactory = "pcl.OpenFM.GUI.OFMGuiFactory")
+@Mod(modid=BuildInfo.modID, name=BuildInfo.modName, version=BuildInfo.versionNumber + "." + BuildInfo.buildNumber, dependencies = "", guiFactory = "pcl.OpenFM.GUI.OFMGuiFactory", acceptedMinecraftVersions = "1.12.2")
 public class OpenFM {
 	public static final String MODID = "openfm";
 	@Mod.Instance(BuildInfo.modID)
@@ -40,36 +41,28 @@ public class OpenFM {
 	@SidedProxy(clientSide="pcl.OpenFM.ClientProxy", serverSide="pcl.OpenFM.CommonProxy")
 	public static CommonProxy proxy;
 	public static List<PlayerDispatcher> playerList = new ArrayList<PlayerDispatcher>();
-	public Configuration config;
 	public static final Logger logger = LogManager.getFormatterLogger(BuildInfo.modID);
 	public static File configFile;
+	private static ContentRegistry contentRegistry = new ContentRegistry();
+	
 	@Mod.EventHandler
 	public void preInit(FMLPreInitializationEvent event) {
 		PacketHandler.init();
-
+		MinecraftForge.EVENT_BUS.register(contentRegistry);
 		// Load config
 		configFile = new File(event.getModConfigurationDirectory() + "/openfm/openfm.cfg");
 		OFMConfiguration.init(configFile);
-		
-		// Check for Mod Update Detector
-		if (event.getSourceFile().getName().endsWith(".jar") && event.getSide().isClient() && OFMConfiguration.enableMUD) {
-			logger.info("Registering mod with OpenUpdater.");
-			try {
-				Class.forName("pcl.mud.OpenUpdater").getDeclaredMethod("registerMod", ModContainer.class, URL.class, URL.class).invoke(null, FMLCommonHandler.instance().findContainerFor(this),
-						new URL("http://PC-Logix.com/OpenFM/get_latest_build.php?mcver=1.7.10"),
-						new URL("http://PC-Logix.com/OpenFM/changelog.php?mcver=1.7.10"));
-			} catch (Throwable e) {
-				logger.info("OpenUpdater is not installed, not registering.");
-			}
-		}
+		ContentRegistry.preInit();
+		proxy.initTileEntities();
+		FMLCommonHandler.instance().bus().register(instance);
+		MinecraftForge.EVENT_BUS.register(instance);
 	}
-
+	
+	@SubscribeEvent
 	@SideOnly(Side.CLIENT)
-	@SubscribeEvent(priority=EventPriority.NORMAL, receiveCanceled=true)
-	public void onEvent(GuiOpenEvent event) {
-		if (event.gui instanceof GuiIngameModOptions) {
-			event.gui = new GuiModList(new GuiIngameMenu());
-		}
+	public void onRegisterModels(ModelRegistryEvent event) {
+		proxy.registerItemRenderers();
+		proxy.registerRenderers();
 	}
 	
 	@Mod.EventHandler
@@ -79,16 +72,11 @@ public class OpenFM {
 		FMLCommonHandler.instance().bus().register(new ClientEvent());
 		MinecraftForge.EVENT_BUS.register(new ServerEvent());
 		FMLCommonHandler.instance().bus().register(new ServerEvent());
-		FMLCommonHandler.instance().bus().register(instance);
-		MinecraftForge.EVENT_BUS.register(instance);
-		ContentRegistry.init();
-		proxy.initTileEntities();
-		proxy.registerRenderers();
 	}
 
 	@SubscribeEvent
 	public void onConfigChanged(ConfigChangedEvent.OnConfigChangedEvent eventArgs) {
-		if(eventArgs.modID.equals(BuildInfo.modID)){
+		if(eventArgs.getModID().equals(BuildInfo.modID)){
 			OFMConfiguration.sync();
 		}
 	}
@@ -96,7 +84,8 @@ public class OpenFM {
 	public static void killAllStreams() {
 		if (playerList != null) {
 			for (PlayerDispatcher p : playerList) {
-				p.stop();
+				if (p != null && p.isPlaying())
+					p.stop();
 			}
 		}
 	}

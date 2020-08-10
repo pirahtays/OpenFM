@@ -6,7 +6,7 @@ import java.util.Map;
 import io.netty.buffer.ByteBuf;
 import pcl.OpenFM.OpenFM;
 import pcl.OpenFM.network.message.BaseRadioMessage;
-import cpw.mods.fml.common.network.simpleimpl.IMessage;
+import net.minecraftforge.fml.common.network.simpleimpl.IMessage;
 
 public class MessageRadioBase implements IMessage {
 	BaseRadioMessage message;

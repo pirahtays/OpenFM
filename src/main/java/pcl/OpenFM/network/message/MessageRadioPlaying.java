@@ -1,7 +1,7 @@
 package pcl.OpenFM.network.message;
 
 import io.netty.buffer.ByteBuf;
-import cpw.mods.fml.common.network.simpleimpl.MessageContext;
+import net.minecraftforge.fml.common.network.simpleimpl.MessageContext;
 import pcl.OpenFM.TileEntity.TileEntityRadio;
 
 public class MessageRadioPlaying extends BaseRadioMessage {
@@ -24,10 +24,14 @@ public class MessageRadioPlaying extends BaseRadioMessage {
 	@Override
 	public void onMessage(TileEntityRadio radio, MessageContext ctx) {
 		if (playing) {
-			try {
-				radio.startStream();
-			} catch (Exception e) {
-				radio.stopStream();
+			System.out.println(ctx.side);
+			if (radio.isValid) {
+				try {
+					radio.startStream();
+				} catch (Exception e) {
+					e.printStackTrace();
+					radio.stopStream();
+				}
 			}
 		} else {
 			radio.stopStream();

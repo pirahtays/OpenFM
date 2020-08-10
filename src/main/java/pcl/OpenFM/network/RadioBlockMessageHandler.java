@@ -2,11 +2,13 @@ package pcl.OpenFM.network;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.tileentity.TileEntity;
+import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.IThreadListener;
 import net.minecraft.world.World;
-import cpw.mods.fml.client.FMLClientHandler;
-import cpw.mods.fml.common.network.simpleimpl.IMessage;
-import cpw.mods.fml.common.network.simpleimpl.IMessageHandler;
-import cpw.mods.fml.common.network.simpleimpl.MessageContext;
+import net.minecraftforge.fml.client.FMLClientHandler;
+import net.minecraftforge.fml.common.network.simpleimpl.IMessage;
+import net.minecraftforge.fml.common.network.simpleimpl.IMessageHandler;
+import net.minecraftforge.fml.common.network.simpleimpl.MessageContext;
 import pcl.OpenFM.TileEntity.TileEntityRadio;
 import pcl.OpenFM.network.message.BaseRadioMessage;
 
@@ -17,11 +19,16 @@ public class RadioBlockMessageHandler {
 		public IMessage onMessage(MessageRadioBase _message, final MessageContext ctx) {
 			final BaseRadioMessage message = _message.message;
 
-			TileEntity tileEntity = FMLClientHandler.instance().getClient().theWorld.getTileEntity(message.x, message.y, message.z);
-			if ((tileEntity instanceof TileEntityRadio)) {
-				message.onMessage((TileEntityRadio) tileEntity, ctx);
-			}
-
+			Minecraft.getMinecraft().addScheduledTask(new Runnable() {
+				@Override
+				public void run() {
+					World world = FMLClientHandler.instance().getClient().world;
+					TileEntity tileEntity = world.getTileEntity(new BlockPos(message.x, message.y, message.z));
+					if ((tileEntity instanceof TileEntityRadio)) {
+						message.onMessage((TileEntityRadio) tileEntity, ctx);
+					}
+				}
+			});
 			return null;
 		}
 	}
@@ -34,12 +41,16 @@ public class RadioBlockMessageHandler {
 			if (message.shouldBroadcast())
 				PacketHandler.INSTANCE.sendToAll(_message);
 
-			World world = ctx.getServerHandler().playerEntity.worldObj;
-			TileEntity tileEntity = world.getTileEntity(message.x, message.y, message.z);
-			if ((tileEntity instanceof TileEntityRadio)) {
-				message.onMessage((TileEntityRadio) tileEntity, ctx);
-			}
-
+			((IThreadListener) ctx.getServerHandler().player.world).addScheduledTask(new Runnable() {
+				@Override
+				public void run() {
+					World world = ctx.getServerHandler().player.world;
+					TileEntity tileEntity = world.getTileEntity(new BlockPos(message.x, message.y, message.z));
+					if ((tileEntity instanceof TileEntityRadio)) {
+						message.onMessage((TileEntityRadio) tileEntity, ctx);
+					}
+				}
+			});
 			return null;
 		}
 	}
