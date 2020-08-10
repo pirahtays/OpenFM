@@ -24,7 +24,7 @@ repositories {
 	mavenCentral()
 	maven {
         name = "OC repo mirror"
-        url = "http://maven.pc-logix.com/"
+        url = "https://maven.cil.li//"
     }
 }
 
@@ -68,7 +68,7 @@ group = "pcl.OpenFM"
 archivesBaseName = "OpenFM-1.12.2"
 
 minecraft {
-    version = "1.12.2-14.23.4.2707"
+    version = "1.12.2-14.23.4.2838"
     runDir = "run"
     mappings = "snapshot_20171003"
     useDepAts = true
@@ -92,23 +92,23 @@ def commonManifest = {
 }
 jar.manifest commonManifest
 
-def curseforge_key = 0
-def curse_changlog = "default"
-if (project.hasProperty('opensecurity_curseforge_key')) {
-	curseforge_key = project.opensecurity_curseforge_key
+//def curseforge_key = 0
+//def curse_changlog = "default"
+// if (project.hasProperty('opensecurity_curseforge_key')) {
+	//curseforge_key = project.opensecurity_curseforge_key
 	//curse_changlog = project.promo-changelog
-	curse_changlog = project.changelog
+	//curse_changlog = project.changelog
 }
 
-curseforge {
-	apiKey = curseforge_key
-	project {
-		id = "236839"
-		releaseType = "release"
-		changelog = curse_changlog
-		addGameVersion '1.12.2'
-	}
-}
+// curseforge {
+	// apiKey = curseforge_key
+	// project {
+		// id = "236839"
+		// releaseType = "release"
+		// changelog = curse_changlog
+		// addGameVersion '1.12.2'
+	// }
+// }
 
 processResources {
     // replace stuff in mcmod.info, nothing else
