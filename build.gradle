@@ -98,7 +98,7 @@ jar.manifest commonManifest
 	//curseforge_key = project.opensecurity_curseforge_key
 	//curse_changlog = project.promo-changelog
 	//curse_changlog = project.changelog
-}
+//}
 
 // curseforge {
 	// apiKey = curseforge_key
