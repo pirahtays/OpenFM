@@ -96,3 +96,4 @@ output.txt
 *.iml
 *.ipr
 *.iws
+.idea/workspace.xml
