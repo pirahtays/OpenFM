@@ -7,9 +7,7 @@ buildscript {
         }
     }
     dependencies {
-        classpath 'net.minecraftforge.gradle:ForgeGradle:3.+'
-        classpath 'com.github.jengelman.gradle.plugins:shadow:4.0.4'
-        classpath 'com.diffplug.spotless:spotless-plugin-gradle:3.10.0'
+        classpath group: 'net.minecraftforge.gradle', name: 'ForgeGradle', version: '3.+', changing: true
     }
 }
 
@@ -40,6 +38,7 @@ repositories {
         name = "OC repo mirror"
         url = "https://maven.cil.li//"
     }
+    maven { url 'https://squiddev.cc/maven/' }
 }
 
 configurations {
@@ -67,9 +66,13 @@ else if (System.getenv("BUILD_NUMBER") != null)
 else
     ext.buildNumber = "+" + getGitRef()
 
+
+/* Version info */
 version = "0.1.0"
 group = "pcl.OpenFM"
 archivesBaseName = "OpenFM-1.12.2"
+def mc_version = "1.12.2"
+def cct_version = "1.89.2"
 
 minecraft {
     mappings channel: 'snapshot', version: '20171003-1.12'
@@ -98,7 +101,7 @@ minecraft {
 
 dependencies {
     compileOnly fg.deobf("li.cil.oc:OpenComputers:MC1.12.2-1.7.2.+")
-    compileOnly fg.deobf("dan200.computercraft:ComputerCraft:1.80pr1-build0")
+    compileOnly fg.deobf("org.squiddev:cc-tweaked-${mc_version}:${cct_version}")
     shade "javazoom:jlayer:1.0.1"
     shade "com.squareup.okhttp3:okhttp:3.13.0"
     shade "com.googlecode.soundlibs:tritonus-share:0.3.7-2"
@@ -156,7 +159,7 @@ processResources {
         include 'mcmod.info'
                 
         // replace version and mcversion
-        expand 'version':project.version + "." + project.ext.buildNumber, 'mcversion':'1.12.2'
+        expand 'version':project.version + "." + project.ext.buildNumber, 'mcversion':mc_version
     }
         
     // copy everything else, thats not the mcmod.info
