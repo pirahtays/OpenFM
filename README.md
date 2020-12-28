@@ -1,4 +1,5 @@
-# OpenFM
+# OpenFM-Modern
+## Updating OpenFM for newer versions (hopefully)
 
 Streaming radio for Minecraft, with OpenComputers, and ComputerCraft support.
 
@@ -23,4 +24,3 @@ fm.setScreenText("Text to display on radio")  Text will scroll if larger than th
 
 Highly modified version of Dragon's Radio Mod, Dragon's Radio Mod is Licenses MIT.
 
-Downloads via Curse http://www.curse.com/mc-mods/Minecraft/236839-openfm
