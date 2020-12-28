@@ -1,24 +1,38 @@
-// For those who want the bleeding edge
 buildscript {
     repositories {
         jcenter()
         maven {
             name = "forge"
-            url = "http://files.minecraftforge.net/maven"
+            url = "https://files.minecraftforge.net/maven"
         }
     }
     dependencies {
-        classpath 'net.minecraftforge.gradle:ForgeGradle:2.3-SNAPSHOT'
+        classpath 'net.minecraftforge.gradle:ForgeGradle:3.+'
+        classpath 'com.github.jengelman.gradle.plugins:shadow:4.0.4'
+        classpath 'com.diffplug.spotless:spotless-plugin-gradle:3.10.0'
     }
 }
 
 plugins {
   id "com.matthewprenger.cursegradle" version "1.0.7"
 }
-apply plugin: 'net.minecraftforge.gradle.forge'
+apply plugin: 'net.minecraftforge.gradle'
 
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
+
+sourceSets {
+    main {
+        java {
+            srcDir 'src/main/java'
+            srcDir 'src/main/resources'
+//            srcDir 'src/api/java'
+        }
+//        resources {
+////            srcDir 'core/src/main/resources'
+//        }
+    }
+}
 
 repositories {
 	mavenCentral()
@@ -46,16 +60,6 @@ def getGitRef() {
   }
 }
 
-dependencies {
-    deobfCompile "li.cil.oc:OpenComputers:MC1.12.2-1.7.2.+"
-	shade "javazoom:jlayer:1.0.1"
-	shade "com.squareup.okhttp:okhttp:2.5.0"
-	shade "com.googlecode.soundlibs:tritonus-share:0.3.7-2"
-	compile "com.googlecode.soundlibs:mp3spi:1.9.5-1"
-	compile "com.googlecode.soundlibs:vorbisspi:1.0.3-1"
-	compile files('libs/jaad-0.8.5.jar')
-}
-
 if (System.getenv("PROMOTED_NUMBER") != null)
     ext.buildNumber = "${System.getenv("PROMOTED_NUMBER")}"
 else if (System.getenv("BUILD_NUMBER") != null)
@@ -68,13 +72,46 @@ group = "pcl.OpenFM"
 archivesBaseName = "OpenFM-1.12.2"
 
 minecraft {
-    version = "1.12.2-14.23.5.2838"
-    runDir = "run"
-    mappings = "snapshot_20171003"
-    useDepAts = true
-	replace "@VERSION@", project.version
-	replace "@BUILD@", project.ext.buildNumber
-	makeObfSourceJar = false
+    mappings channel: 'snapshot', version: '20171003-1.12'
+
+    runs {
+        client {
+            workingDirectory project.file('run')
+
+            // Recommended logging data for a userdev environment
+            property 'forge.logging.markers', 'SCAN,REGISTRIES,REGISTRYDUMP'
+
+            // Recommended logging level for the console
+            property 'forge.logging.console.level', 'debug'
+        }
+
+        server {
+
+            // Recommended logging data for a userdev environment
+            property 'forge.logging.markers', 'SCAN,REGISTRIES,REGISTRYDUMP'
+
+            // Recommended logging level for the console
+            property 'forge.logging.console.level', 'debug'
+        }
+    }
+}
+
+dependencies {
+    compileOnly fg.deobf("li.cil.oc:OpenComputers:MC1.12.2-1.7.2.+")
+    compileOnly fg.deobf("dan200.computercraft:ComputerCraft:1.80pr1-build0")
+    shade "javazoom:jlayer:1.0.1"
+    shade "com.squareup.okhttp3:okhttp:3.13.0"
+    shade "com.googlecode.soundlibs:tritonus-share:0.3.7-2"
+    compile "com.googlecode.soundlibs:mp3spi:1.9.5-1"
+    compile "com.googlecode.soundlibs:vorbisspi:1.0.3-1"
+    compile files('libs/jaad-0.8.5.jar')
+    minecraft 'net.minecraftforge:forge:1.12.2-14.23.5.2854'
+
+    // IntelliJ
+    compile 'org.jetbrains:annotations:15.0'
+
+    testCompile 'junit:junit:4.12'
+    testCompile 'org.mockito:mockito-core:2.+'
 }
 
 version = "${version}.${project.ext.buildNumber}"
@@ -111,12 +148,15 @@ jar.manifest commonManifest
 // }
 
 processResources {
+    // this will ensure that this task is redone when the versions change.
+    inputs.property "version", project.version
+
     // replace stuff in mcmod.info, nothing else
     from(sourceSets.main.resources.srcDirs) {
         include 'mcmod.info'
                 
         // replace version and mcversion
-        expand 'version':project.version + "." + project.ext.buildNumber, 'mcversion':project.minecraft.version
+        expand 'version':project.version + "." + project.ext.buildNumber, 'mcversion':'1.12.2'
     }
         
     // copy everything else, thats not the mcmod.info
@@ -125,10 +165,10 @@ processResources {
     }
 }
 
-// this is needed for IntelliJ so we don't have to copy over the assets manually every time
-idea {
-    module {
-        outputDir = file('build/classes/main')
-    }
-}
+//// this is needed for IntelliJ so we don't have to copy over the assets manually every time
+//idea {
+//    module {
+//        outputDir = file('build/classes/main')
+//    }
+//}
 

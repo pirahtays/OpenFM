@@ -27,9 +27,9 @@ import pcl.OpenFM.OpenFM;
 import pcl.OpenFM.network.PacketHandler;
 import pcl.OpenFM.network.message.MessageRadioPlaying;
 
-import com.squareup.okhttp.OkHttpClient;
-import com.squareup.okhttp.Request;
-import com.squareup.okhttp.Response;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
 
 import net.minecraft.util.text.TextComponentString;
 import net.minecraft.util.text.translation.I18n;

@@ -52,9 +52,9 @@ import pcl.OpenFM.network.message.MessageRadioPlaying;
 import pcl.OpenFM.network.message.MessageRadioSync;
 import pcl.OpenFM.player.PlayerDispatcher;
 
-import com.squareup.okhttp.OkHttpClient;
-import com.squareup.okhttp.Request;
-import com.squareup.okhttp.Response;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
 
 import dan200.computercraft.api.lua.ILuaContext;
 import dan200.computercraft.api.peripheral.IComputerAccess;
