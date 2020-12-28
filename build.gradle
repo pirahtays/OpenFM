@@ -67,15 +67,8 @@ else
     ext.buildNumber = "+" + getGitRef()
 
 
-/* Version info */
-version = "0.1.0"
-group = "pcl.OpenFM"
-archivesBaseName = "OpenFM-1.12.2"
-def mc_version = "1.12.2"
-def cct_version = "1.89.2"
-
 minecraft {
-    mappings channel: 'snapshot', version: '20171003-1.12'
+    mappings channel: 'snapshot', version: '20201028-1.16.3'
 
     runs {
         client {
@@ -100,15 +93,15 @@ minecraft {
 }
 
 dependencies {
-    compileOnly fg.deobf("li.cil.oc:OpenComputers:MC1.12.2-1.7.2.+")
-    compileOnly fg.deobf("org.squiddev:cc-tweaked-${mc_version}:${cct_version}")
+    //compileOnly fg.deobf("li.cil.oc:OpenComputers:MC1.12.2-1.7.2.+")
+    compileOnly fg.deobf("org.squiddev:cc-tweaked-${minecraft_version}:${cct_version}")
     shade "javazoom:jlayer:1.0.1"
     shade "com.squareup.okhttp3:okhttp:3.13.0"
     shade "com.googlecode.soundlibs:tritonus-share:0.3.7-2"
     compile "com.googlecode.soundlibs:mp3spi:1.9.5-1"
     compile "com.googlecode.soundlibs:vorbisspi:1.0.3-1"
     compile files('libs/jaad-0.8.5.jar')
-    minecraft 'net.minecraftforge:forge:1.12.2-14.23.5.2854'
+    minecraft "net.minecraftforge:forge:${minecraft_version}-${forge_version}"
 
     // IntelliJ
     compile 'org.jetbrains:annotations:15.0'
@@ -159,7 +152,7 @@ processResources {
         include 'mcmod.info'
                 
         // replace version and mcversion
-        expand 'version':project.version + "." + project.ext.buildNumber, 'mcversion':mc_version
+        expand 'version':project.version + "." + project.ext.buildNumber, 'mcversion':minecraft_version
     }
         
     // copy everything else, thats not the mcmod.info
